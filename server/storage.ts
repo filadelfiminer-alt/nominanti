@@ -108,12 +108,10 @@ export class MemStorage implements IStorage {
       if (cat.toLowerCase() === normalized) {
         return cat;
       }
-      
-      const catWords = cat.toLowerCase().replace(/[()]/g, '').split(' ').filter(w => w.length > 2);
-      const inputWords = normalized.replace(/[()]/g, '').split(' ').filter(w => w.length > 2);
-      
-      const matchCount = catWords.filter(w => inputWords.some(iw => iw.includes(w) || w.includes(iw))).length;
-      if (matchCount >= Math.max(1, catWords.length - 1)) {
+    }
+    
+    for (const cat of NOMINATION_CATEGORIES) {
+      if (cat === category) {
         return cat;
       }
     }

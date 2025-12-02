@@ -4,15 +4,15 @@ import { storage } from "./storage";
 import { NOMINATION_CATEGORIES, type Vote } from "@shared/schema";
 
 const THREAD_ID = "9429102";
-const API_BASE = "https://api.zelenka.guru/forum";
+const API_BASE = "https://prod-api.lolz.live";
 
 interface LolzPost {
   post_id: number;
-  user_id: number;
-  username: string;
+  poster_user_id: number;
+  poster_username: string;
   post_body: string;
   post_body_plain_text?: string;
-  post_date: number;
+  post_create_date: number;
 }
 
 interface LolzResponse {
@@ -69,26 +69,38 @@ function parseNominationsFromPost(post: LolzPost): Vote[] {
   const lines = text.split(/\n|\r/).map((l) => l.trim()).filter(Boolean);
 
   for (const line of lines) {
-    const match = line.match(/^(.+?):\s*@?(.+)$/);
-    if (!match) continue;
-
-    const [, categoryRaw, nomineeRaw] = match;
-    const category = categoryRaw.trim();
-    const nominee = nomineeRaw.trim().replace(/^@/, "").split(/\s+/)[0];
-
+    const colonIdx = line.indexOf(":");
+    if (colonIdx === -1) continue;
+    
+    const beforeColon = line.substring(0, colonIdx).trim().toLowerCase();
+    const afterColon = line.substring(colonIdx + 1).trim();
+    
+    if (!afterColon) continue;
+    
+    let matchedCategory: string | null = null;
+    
+    for (const category of NOMINATION_CATEGORIES) {
+      if (beforeColon === category.toLowerCase()) {
+        matchedCategory = category;
+        break;
+      }
+    }
+    
+    if (!matchedCategory) continue;
+    
+    const nominee = afterColon.replace(/^@/, "").split(/[\s,;|]+/)[0].trim();
+    
     if (!nominee || nominee.length < 2 || nominee.length > 50) continue;
-
-    const normalizedCategory = normalizeCategory(category);
-    if (!normalizedCategory) continue;
+    if (/^[0-9]+$/.test(nominee)) continue;
 
     votes.push({
-      id: `${post.post_id}-${category}-${nominee}`,
-      category: normalizedCategory,
+      id: `${post.post_id}-${matchedCategory}-${nominee}`,
+      category: matchedCategory,
       nominee: nominee.toLowerCase(),
-      voterId: post.user_id,
-      voterUsername: post.username,
+      voterId: post.poster_user_id,
+      voterUsername: post.poster_username,
       postId: post.post_id,
-      timestamp: new Date(post.post_date * 1000).toISOString(),
+      timestamp: new Date(post.post_create_date * 1000).toISOString(),
     });
   }
 
