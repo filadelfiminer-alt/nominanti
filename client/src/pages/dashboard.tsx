@@ -30,8 +30,14 @@ export default function Dashboard() {
 
   const handleRefresh = async () => {
     setIsManualRefreshing(true);
-    await refetch();
-    setIsManualRefreshing(false);
+    try {
+      await fetch("/api/refresh", { method: "POST" });
+      await refetch();
+    } catch (error) {
+      console.error("Failed to refresh:", error);
+    } finally {
+      setIsManualRefreshing(false);
+    }
   };
 
   const formatLastUpdate = () => {

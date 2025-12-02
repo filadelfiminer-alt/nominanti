@@ -151,6 +151,7 @@ async function fetchAllPosts(): Promise<void> {
   await storage.setTotalPages(totalPages);
   console.log(`Total pages to process: ${totalPages}`);
 
+  let newPostsCount = 0;
   const processedIds = await storage.getProcessedPostIds();
 
   for (const post of firstPage.posts) {
@@ -161,12 +162,14 @@ async function fetchAllPosts(): Promise<void> {
       await storage.addVote(vote);
     }
     await storage.addProcessedPostId(post.post_id);
+    processedIds.add(post.post_id);
+    newPostsCount++;
   }
 
   for (let page = 2; page <= totalPages; page++) {
     console.log(`Fetching page ${page}/${totalPages}...`);
     
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, 300));
 
     const pageData = await fetchThreadPage(page);
     if (!pageData) {
@@ -182,10 +185,12 @@ async function fetchAllPosts(): Promise<void> {
         await storage.addVote(vote);
       }
       await storage.addProcessedPostId(post.post_id);
+      processedIds.add(post.post_id);
+      newPostsCount++;
     }
   }
 
-  console.log("Finished fetching all posts");
+  console.log(`Finished fetching all posts. New posts processed: ${newPostsCount}`);
 }
 
 let isFetching = false;
