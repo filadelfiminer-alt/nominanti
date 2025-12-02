@@ -90,8 +90,7 @@ function parseNominationsFromPost(post: LolzPost): Vote[] {
     
     const nominee = afterColon.replace(/^@/, "").split(/[\s,;|]+/)[0].trim();
     
-    if (!nominee || nominee.length < 2 || nominee.length > 50) continue;
-    if (/^[0-9]+$/.test(nominee)) continue;
+    if (!nominee || nominee.length < 1 || nominee.length > 50) continue;
 
     votes.push({
       id: `${post.post_id}-${matchedCategory}-${nominee}`,
