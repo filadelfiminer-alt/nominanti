@@ -1,7 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Trophy, Medal, Award } from "lucide-react";
+import { Trophy, Medal, Award, ChevronDown } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useState } from "react";
 import type { LeaderboardEntry } from "@shared/schema";
 
 interface LeaderboardProps {
@@ -39,6 +41,8 @@ function getRankDisplay(rank: number) {
 }
 
 export function Leaderboard({ entries, isLoading }: LeaderboardProps) {
+  const [expandedUser, setExpandedUser] = useState<string | null>(null);
+
   if (isLoading) {
     return (
       <Card>
@@ -65,6 +69,10 @@ export function Leaderboard({ entries, isLoading }: LeaderboardProps) {
 
   const topEntries = entries.slice(0, 15);
 
+  const handleToggle = (username: string) => {
+    setExpandedUser(expandedUser === username ? null : username);
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -79,27 +87,68 @@ export function Leaderboard({ entries, isLoading }: LeaderboardProps) {
             Пока нет данных
           </p>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-1">
             {topEntries.map((entry, index) => {
               const rank = index + 1;
+              const isExpanded = expandedUser === entry.username;
               return (
-                <div
-                  key={entry.username}
-                  className={`flex items-center gap-3 p-2 rounded-md ${
-                    rank <= 3 ? "bg-muted/50" : "hover:bg-muted/30"
-                  }`}
-                  data-testid={`leaderboard-entry-${entry.username}`}
-                >
-                  {getRankDisplay(rank)}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{entry.username}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {entry.categories.length} категори{entry.categories.length === 1 ? "я" : entry.categories.length < 5 ? "и" : "й"}
-                    </p>
-                  </div>
-                  <Badge className="font-mono shrink-0">
-                    {entry.totalVotes}
-                  </Badge>
+                <div key={entry.username}>
+                  <motion.div
+                    onClick={() => handleToggle(entry.username)}
+                    className={`flex items-center gap-3 p-2 rounded-md cursor-pointer transition-colors ${
+                      rank <= 3 ? "bg-muted/50" : ""
+                    } ${isExpanded ? "bg-muted" : "hover:bg-muted/30"}`}
+                    data-testid={`leaderboard-entry-${entry.username}`}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    {getRankDisplay(rank)}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate">{entry.username}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {entry.categories.length} категори{entry.categories.length === 1 ? "я" : entry.categories.length < 5 ? "и" : "й"}
+                      </p>
+                    </div>
+                    <Badge className="font-mono shrink-0">
+                      {entry.totalVotes}
+                    </Badge>
+                    <motion.div
+                      animate={{ rotate: isExpanded ? 180 : 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                    </motion.div>
+                  </motion.div>
+                  
+                  <AnimatePresence>
+                    {isExpanded && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2, ease: "easeInOut" }}
+                        className="overflow-hidden"
+                      >
+                        <div className="ml-11 py-2 pl-2 border-l-2 border-muted space-y-1.5">
+                          {entry.categories.map((cat) => (
+                            <motion.div
+                              key={cat.name}
+                              initial={{ x: -10, opacity: 0 }}
+                              animate={{ x: 0, opacity: 1 }}
+                              transition={{ duration: 0.15 }}
+                              className="flex items-center justify-between gap-2 text-sm"
+                            >
+                              <span className="text-muted-foreground truncate">
+                                {cat.name}
+                              </span>
+                              <Badge variant="secondary" className="font-mono text-xs shrink-0">
+                                {cat.votes}
+                              </Badge>
+                            </motion.div>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               );
             })}
